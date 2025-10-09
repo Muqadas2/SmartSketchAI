@@ -1,0 +1,10 @@
+Django>=4.2
+djangorestframework
+djangorestframework-simplejwt
+Pillow
+django-cors-headers
+celery[redis]
+redis
+channels
+python-dotenv
+torch
