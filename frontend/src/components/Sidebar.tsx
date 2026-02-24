@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 function Sidebar() {
   const location = useLocation();
-  
+  const { isAuthenticated, logout } = useAuth();
+
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col h-full">
       <div className="p-4 border-b border-gray-200">
@@ -35,6 +37,45 @@ function Sidebar() {
               Chat Interface
             </Link>
           </li>
+          {!isAuthenticated && (
+            <>
+              <li>
+                <Link
+                  to="/login"
+                  className={`text-sm px-3 py-2 rounded-lg transition-colors block ${
+                    location.pathname === '/login'
+                      ? 'text-gray-900 bg-gray-100 font-medium'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  Sign In
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/register"
+                  className={`text-sm px-3 py-2 rounded-lg transition-colors block ${
+                    location.pathname === '/register'
+                      ? 'text-gray-900 bg-gray-100 font-medium'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  Sign Up
+                </Link>
+              </li>
+            </>
+          )}
+          {isAuthenticated && (
+            <li>
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="text-sm px-3 py-2 rounded-lg transition-colors block w-full text-left text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              >
+                Sign out
+              </button>
+            </li>
+          )}
           <li>
             <Link
               to="/settings"
