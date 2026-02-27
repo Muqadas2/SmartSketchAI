@@ -62,7 +62,47 @@
 
 ---
 
-## 3. Other useful endpoints
+## 3. Edit forensic sketch
+
+- **POST** `/api/forensic/edit/`
+- **Headers:** `Authorization: Bearer <access>`, `Content-Type: application/json`
+- **Body (JSON):**
+  ```json
+  {
+    "original_image_id": 123,
+    "edit_prompt": "add round glasses",
+    "strength": 0.6
+  }
+  ```
+  - `original_image_id`: required. ID of a GeneratedImage owned by the user.
+  - `edit_prompt`: required. What to change (e.g., "add beard", "make older").
+  - `strength`: optional, 0.0-1.0, default 0.6. Higher = more change.
+
+- **Success 200:**
+  ```json
+  {
+    "id": 1,
+    "original_image_id": 123,
+    "original_image_url": "http://127.0.0.1:8000/media/generated/xxx.png",
+    "edited_image_url": "http://127.0.0.1:8000/media/edited/yyy.png",
+    "edit_prompt": "add round glasses",
+    "identity_score": 0.87,
+    "identity_preserved": true,
+    "scores": { "clip_score": 0.69, "combined_score": 69.1 },
+    "metadata": { ... },
+    "edit_id": "edit_..."
+  }
+  ```
+
+- **Errors:**
+  - **400** – Missing fields or ML error: `{ "error": "..." }`
+  - **403** – Not allowed (only role `forensic` or admin)
+  - **404** – Original image not found or not owned by user
+  - **502** – ML service unreachable or bad response
+
+---
+
+## 4. Other useful endpoints
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
@@ -74,13 +114,13 @@
 
 ---
 
-## 4. CORS
+## 5. CORS
 
 Backend allows all origins in dev (`CORS_ALLOW_ALL_ORIGINS = True`). No extra CORS setup needed for local frontend (e.g. Vite on `http://localhost:5173`).
 
 ---
 
-## 5. Frontend config
+## 6. Frontend config
 
 - Set **API base URL** to `http://127.0.0.1:8000/api` for local development (env var recommended, e.g. `VITE_API_BASE_URL`).
 - Store `access` in memory or secure storage; send as `Authorization: Bearer <access>` on every protected request.
