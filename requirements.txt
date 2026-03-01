@@ -1,15 +1,8 @@
-# Django Backend
 Django>=4.2
-djangorestframework>=3.14
+djangorestframework>=3.14.0
 djangorestframework-simplejwt
-django-cors-headers
+Pillow>=10.0.0
+django-cors-headers>=4.0.0
 python-dotenv
-
-# Image handling
-Pillow>=10.0
-
-# HTTP requests (for calling ML service)
-requests
-
-# Streamlit Frontend
-streamlit
+requests>=2.28.0
+streamlit>=1.30.0

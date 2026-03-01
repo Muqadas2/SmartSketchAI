@@ -104,7 +104,7 @@ def generate_forensic_sketch(request):
         except (TypeError, ValueError):
             return Response({"error": "age must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
     else:
-        age = None
+        age = 30  # Default age when not provided
 
     ml_url = COLAB_ML_URL if COLAB_ML_URL.endswith("/generate") else f"{COLAB_ML_URL.rstrip('/')}/generate"
     try:

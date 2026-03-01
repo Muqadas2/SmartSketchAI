@@ -10,6 +10,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    role = serializers.ChoiceField(choices=User.ROLE_CHOICES, default='forensic', required=False)
+    
     class Meta:
         model = User
         fields = ('username','email','password','role')
@@ -18,7 +20,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create(
             username=validated_data['username'],
             email=validated_data.get('email', ''),
-            role=validated_data.get('role', 'general'),
+            role=validated_data.get('role', 'forensic'),
         )
         user.set_password(validated_data['password'])
         user.save()
