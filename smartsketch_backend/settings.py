@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+import torch
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,6 +27,18 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Colab ML service – set in .env as COLAB_ML_URL=https://xxxx.ngrok-free.app/generate
 COLAB_ML_URL = (os.environ.get("COLAB_ML_URL") or "").strip().rstrip("/")
+
+# ML Engine Configuration
+ML_CONFIG = {
+    'DEVICE': 'cuda' if torch.cuda.is_available() else 'cpu',
+    'VALIDATOR_MODEL': 'Qwen/Qwen2.5-3B-Instruct',
+    'SDXL_MODEL': 'stabilityai/stable-diffusion-xl-base-1.0',
+    'LORA_PATH': str(BASE_DIR / 'ml_engine' / 'weights' / 'forensic_face_v1.safetensors'),
+    'LORA_STRENGTH': 0.3,
+    'ENABLE_SKETCH': True,
+    'ENABLE_EDITING': True,
+    'USE_LOCAL_ML': False, # Default to False since GPU is limited
+}
 
 
 
