@@ -346,7 +346,8 @@ class SmartSketchPipeline:
         lora_strength: float = 0.3,
         device: str = "cuda",
         enable_sketch: bool = True,
-        enable_editing: bool = True  # NEW
+        enable_editing: bool = True,  # NEW
+        enable_offload: bool = False
     ):
         """
         Initialize complete pipeline
@@ -364,7 +365,7 @@ class SmartSketchPipeline:
             SmartSketchPipeline instance
         """
         validator = ForensicPromptValidator(validator_model, device=device)
-        generator = FaceGenerator(sdxl_model, lora_path, lora_strength, device=device)
+        generator = FaceGenerator(sdxl_model, lora_path, lora_strength, device=device, enable_offload=enable_offload)
         scorer = FaceScorer(device=device)
         
         # Load sketch converter
@@ -373,7 +374,8 @@ class SmartSketchPipeline:
             try:
                 sketch_converter = MemoryEfficientSketchConverter(
                     base_pipeline=generator.pipe,
-                    device=device
+                    device=device,
+                    enable_offload=enable_offload
                 )
             except Exception as e:
                 print(f"⚠️  Could not load sketch converter: {e}")
@@ -386,7 +388,8 @@ class SmartSketchPipeline:
                 from .editor import FaceEditor
                 face_editor = FaceEditor(
                     base_pipeline=generator.pipe,
-                    device=device
+                    device=device,
+                    enable_offload=enable_offload
                 )
             except Exception as e:
                 print(f"⚠️  Could not load face editor: {e}")

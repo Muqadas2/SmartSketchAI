@@ -31,9 +31,12 @@ The ML Engine is a hybrid system combining:
 - **Proposed Solution:** Implement an asynchronous task queue using **Celery & Redis**. Provide `task_id` for polling or use WebSockets for real-time progress updates.
 
 ### 4. GPU Memory Management (Medium Priority)
-- **Problem:** Loading multiple SDXL pipelines (Generator, Editor, ControlNet) can exceed VRAM limits on consumer hardware (8GB-12GB).
-- **Impact:** Out-of-Memory (OOM) errors and slow performance on local machines.
-- **Proposed Solution:** Enable **Model Offloading** and **Sequential CPU Offloading** (`pipe.enable_model_cpu_offload()`).
+- **Status:** COMPLETED ✅
+- **Implementation:** 
+    - Added `LOW_VRAM_MODE` global toggle in `.env`.
+    - Integrated `enable_model_cpu_offload()` across all pipelines.
+    - Enabled `vae_slicing()` and `vae_tiling()` to handle 1024x1024 images on low VRAM.
+    - Added memory sharing logic in `SmartSketchPipeline`.
 
 ---
 

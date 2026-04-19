@@ -38,6 +38,7 @@ ML_CONFIG = {
     'ENABLE_SKETCH': True,
     'ENABLE_EDITING': True,
     'USE_LOCAL_ML': False, # Default to False since GPU is limited
+    'LOW_VRAM_MODE': os.environ.get("LOW_VRAM_MODE", "False").lower() == "true",
 }
 
 

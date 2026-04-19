@@ -30,7 +30,8 @@ class FaceEditor:
     def __init__(
         self,
         base_pipeline=None,
-        device: str = "cuda"
+        device: str = "cuda",
+        enable_offload: bool = False
     ):
         """
         Initialize face editor
@@ -73,7 +74,13 @@ class FaceEditor:
                 torch_dtype=torch.float16 if device == "cuda" else torch.float32
             )
         
-        self.pipe.to(device)
+        if enable_offload and device == "cuda":
+            print("  - Enabling Model CPU Offload & VAE Optimizations for Editor")
+            self.pipe.enable_model_cpu_offload()
+            self.pipe.enable_vae_slicing()
+            self.pipe.enable_vae_tiling()
+        else:
+            self.pipe.to(device)
         
         # Edit type presets (optimized strengths)
         self.edit_presets = {

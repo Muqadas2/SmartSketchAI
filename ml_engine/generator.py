@@ -24,7 +24,8 @@ class FaceGenerator:
         model_path: str = "stabilityai/stable-diffusion-xl-base-1.0",
         lora_path: Optional[str] = None,
         lora_strength: float = 0.3,
-        device: str = "cuda"
+        device: str = "cuda",
+        enable_offload: bool = False
     ):
         """
         Initialize the generator
@@ -56,7 +57,13 @@ class FaceGenerator:
             print(f"✅ LoRA loaded (strength: {lora_strength})")
         
         # Move to device
-        self.pipe.to(device)
+        if enable_offload and device == "cuda":
+            print("  - Enabling Model CPU Offload & VAE Optimizations (Balanced Mode)")
+            self.pipe.enable_model_cpu_offload()
+            self.pipe.enable_vae_slicing()
+            self.pipe.enable_vae_tiling()
+        else:
+            self.pipe.to(device)
         
         print(f"✅ Generator ready on {device}")
     
