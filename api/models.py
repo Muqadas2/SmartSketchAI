@@ -21,6 +21,8 @@ class GeneratedImage(models.Model):
     image_file = models.ImageField(upload_to='generated/', null=True, blank=True)
     seed = models.BigIntegerField(null=True, blank=True)
     model_version = models.CharField(max_length=50, blank=True)
+    forensic_hash = models.CharField(max_length=64, blank=True, null=True, help_text="SHA-256 hash of the pixel data")
+    is_watermarked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -31,6 +33,8 @@ class EditedImage(models.Model):
     original_image = models.ForeignKey(GeneratedImage, on_delete=models.CASCADE, related_name='edits', null=True, blank=True)
     edit_prompt = models.TextField()
     edited_file = models.ImageField(upload_to='edited/')
+    forensic_hash = models.CharField(max_length=64, blank=True, null=True, help_text="SHA-256 hash of the pixel data")
+    is_watermarked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
 class ImageScore(models.Model):

@@ -12,6 +12,7 @@ from .generator import FaceGenerator
 from .scorer import FaceScorer
 from .sketch_converter import MemoryEfficientSketchConverter
 from .inpainter import FaceInpainter
+from .integrity import ForensicSigner, ForensicSafetyChecker
 
 
 class SmartSketchPipeline:
@@ -26,7 +27,9 @@ class SmartSketchPipeline:
         scorer: FaceScorer,
         sketch_converter: Optional[MemoryEfficientSketchConverter] = None,
         face_editor: Optional["FaceEditor"] = None,
-        face_inpainter: Optional[FaceInpainter] = None
+        face_inpainter: Optional[FaceInpainter] = None,
+        forensic_signer: Optional[ForensicSigner] = None,
+        safety_checker: Optional[ForensicSafetyChecker] = None
     ):
         """
         Initialize pipeline
@@ -44,6 +47,8 @@ class SmartSketchPipeline:
         self.sketch_converter = sketch_converter
         self.face_editor = face_editor
         self.face_inpainter = face_inpainter
+        self.signer = forensic_signer or ForensicSigner()
+        self.safety_checker = safety_checker
         
         print("=" * 60)
         print("🚀 SmartSketch Pipeline Initialized")
@@ -181,7 +186,25 @@ class SmartSketchPipeline:
                 }
         
         # ============================================
-        # STEP 4: SCORE THE OUTPUT
+        # STEP 4: FORENSIC INTEGRITY (SIGN & HASH)
+        # ============================================
+        print("\n🛡️ Applying forensic integrity...")
+        
+        # Safety Check (Optional)
+        has_nsfw = False
+        if self.safety_checker:
+            final_image, has_nsfw = self.safety_checker.check(final_image)
+            if has_nsfw:
+                print("⚠️  NSFW content detected. Image censored.")
+
+        # Invisible Watermark
+        final_image = self.signer.sign_image(final_image)
+        
+        # Calculate Hash
+        forensic_hash = self.signer.calculate_hash(final_image)
+
+        # ============================================
+        # STEP 5: SCORE THE OUTPUT
         # ============================================
         
         try:
@@ -207,6 +230,8 @@ class SmartSketchPipeline:
             "photo_image": photo_image,
             "output_type": output_type,
             "scores": scores,
+            "forensic_hash": forensic_hash,
+            "is_watermarked": True,
             "metadata": {
                 "timestamp": timestamp,
                 "case_type": case_type,
@@ -324,6 +349,12 @@ class SmartSketchPipeline:
                 'combined_score': 0.0,
                 'interpretation': f"Scoring failed: {str(e)}"
             }
+            
+        # Step 4: Forensic Integrity
+        print("\n🛡️ Applying forensic integrity to edit...")
+        result['edited_image'] = self.signer.sign_image(result['edited_image'])
+        result['forensic_hash'] = self.signer.calculate_hash(result['edited_image'])
+        result['is_watermarked'] = True
         
         # Add original generation reference
         result['original_generation_id'] = generation_id
@@ -375,6 +406,12 @@ class SmartSketchPipeline:
             result['scores'] = scores
             result['generation_id'] = generation_id
             
+            # Step 4: Forensic Integrity
+            print("\n🛡️ Applying forensic integrity to inpaint...")
+            result['edited_image'] = self.signer.sign_image(result['edited_image'])
+            result['forensic_hash'] = self.signer.calculate_hash(result['edited_image'])
+            result['is_watermarked'] = True
+            
         return result
 
     @classmethod
@@ -388,6 +425,7 @@ class SmartSketchPipeline:
         enable_sketch: bool = True,
         enable_editing: bool = True,
         enable_inpainting: bool = True,
+        enable_safety: bool = True,
         enable_offload: bool = False
     ):
         """
@@ -448,7 +486,17 @@ class SmartSketchPipeline:
             except Exception as e:
                 print(f"⚠️  Could not load face inpainter: {e}")
         
-        return cls(validator, generator, scorer, sketch_converter, face_editor, face_inpainter)
+        # Load safety checker
+        safety_checker = None
+        if enable_safety:
+            try:
+                safety_checker = ForensicSafetyChecker(device=device)
+            except Exception as e:
+                print(f"⚠️  Could not load safety checker: {e}")
+        
+        signer = ForensicSigner()
+        
+        return cls(validator, generator, scorer, sketch_converter, face_editor, face_inpainter, signer, safety_checker)
 
 
 # Convenience function
