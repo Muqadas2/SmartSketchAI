@@ -306,7 +306,8 @@ class SmartSketchPipeline:
         try:
             scores = self.scorer.score_generation(
                 image=result['edited_image'],
-                prompt=enhanced_edit
+                prompt=enhanced_edit,
+                identity_score=result.get('identity_score')
             )
             
             result['scores'] = scores

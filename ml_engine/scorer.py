@@ -35,19 +35,25 @@ class FaceScorer:
         
         print(f"✅ Scorer loaded on {self.device}")
     
-    def score_generation(self, image: Image.Image, prompt: str) -> Dict:
+    def score_generation(
+        self, 
+        image: Image.Image, 
+        prompt: str, 
+        identity_score: Optional[float] = None
+    ) -> Dict:
         """
         Score a generated image
         
         Args:
             image: PIL Image
             prompt: Text description
+            identity_score: Score for identity preservation (optional)
         
         Returns:
             Dictionary with scores and interpretation
         """
         clip_score = self.compute_clip_score(image, prompt)
-        return self.get_combined_score(clip_score)
+        return self.get_combined_score(clip_score, identity_score=identity_score)
     
     def compute_clip_score(self, image: Image.Image, text_prompt: str) -> float:
         """

@@ -9,6 +9,12 @@ from typing import Optional, Dict
 import random
 from datetime import datetime
 
+try:
+    from facenet_pytorch import MTCNN, InceptionResnetV1
+    HAS_FACENET = True
+except ImportError:
+    HAS_FACENET = False
+
 
 class FaceEditor:
     """
@@ -32,7 +38,7 @@ class FaceEditor:
             base_pipeline: Existing SDXL pipeline to reuse (saves memory!)
             device: cuda or cpu
         """
-        print("✏️ Loading Face Editor...")
+        print("[Editor] Loading Face Editor...")
         
         self.device = device
         
@@ -69,7 +75,17 @@ class FaceEditor:
             'default': {'strength': 0.70, 'guidance': 7.5}
         }
         
-        print("✅ Face Editor ready!")
+        # Load Identity Models (NEW)
+        if HAS_FACENET:
+            print("[Identity] Loading Face Recognition models (MTCNN + InceptionResnetV1)...")
+            self.detector = MTCNN(device=device, post_process=False)
+            self.identity_model = InceptionResnetV1(pretrained='vggface2').eval().to(device)
+        else:
+            print("[Warning] facenet-pytorch not found. Falling back to SSIM for identity scoring.")
+            self.detector = None
+            self.identity_model = None
+
+        print("[Editor] Face Editor ready!")
     
     def detect_edit_type(self, edit_prompt: str) -> str:
         """Auto-detect edit type from prompt"""
@@ -98,32 +114,60 @@ class FaceEditor:
         edited_image: Image.Image
     ) -> float:
         """
-        Measure how well identity was preserved using SSIM
+        Measure how well identity was preserved using Face Embeddings (Cosine Similarity)
         
         Returns:
             Score 0-1 (higher = better preservation)
         """
+        if not HAS_FACENET or self.identity_model is None:
+            return self._compute_ssim_fallback(original_image, edited_image)
+
+        try:
+            import torch.nn.functional as F
+            
+            # 1. Detect and crop faces
+            orig_face = self.detector(original_image)
+            edit_face = self.detector(edited_image)
+
+            if orig_face is None or edit_face is None:
+                print("[Warning] Could not detect face in one of the images. Falling back to SSIM.")
+                return self._compute_ssim_fallback(original_image, edited_image)
+
+            # 2. Get embeddings
+            with torch.no_grad():
+                # self.detector returns tensor (3, 160, 160)
+                # We need (1, 3, 160, 160)
+                orig_embedding = self.identity_model(orig_face.unsqueeze(0).to(self.device))
+                edit_embedding = self.identity_model(edit_face.unsqueeze(0).to(self.device))
+
+                # 3. Compute Cosine Similarity
+                similarity = F.cosine_similarity(orig_embedding, edit_embedding).item()
+            
+            # Normalize: Cosine similarity for embeddings is typically 0.6+ for same person
+            # We'll keep it as is, or slightly scale it if needed. 
+            # 1.0 is identical, <0.5 is usually different person.
+            return max(0.0, float(similarity))
+
+        except Exception as e:
+            print(f"⚠️  Embedding scoring failed: {e}. Falling back to SSIM.")
+            return self._compute_ssim_fallback(original_image, edited_image)
+
+    def _compute_ssim_fallback(self, original_image: Image.Image, edited_image: Image.Image) -> float:
+        """Fallback SSIM scoring if facenet is unavailable"""
         try:
             import cv2
             import numpy as np
             from skimage.metrics import structural_similarity as ssim
             
-            # Convert to grayscale numpy arrays
             orig_gray = np.array(original_image.convert('L'))
             edit_gray = np.array(edited_image.convert('L'))
             
-            # Ensure same size
             if orig_gray.shape != edit_gray.shape:
                 edit_gray = cv2.resize(edit_gray, (orig_gray.shape[1], orig_gray.shape[0]))
             
-            # Compute SSIM
-            score = ssim(orig_gray, edit_gray)
-            
-            return float(score)
-            
-        except Exception as e:
-            print(f"⚠️  Identity scoring failed: {e}")
-            return 0.0
+            return float(ssim(orig_gray, edit_gray))
+        except:
+            return 0.5 # Neutral fallback
     
     def edit_face(
         self,

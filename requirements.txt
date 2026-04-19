@@ -34,6 +34,7 @@ opencv-python
 
 # Face Editing & Identity Scoring
 scikit-image
+facenet-pytorch
 
 # Utilities
 numpy
