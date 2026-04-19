@@ -31,6 +31,7 @@ class MLService:
                 device=device,
                 enable_sketch=ml_config.get('ENABLE_SKETCH', True),
                 enable_editing=ml_config.get('ENABLE_EDITING', True),
+                enable_inpainting=ml_config.get('ENABLE_INPAINTING', True),
                 enable_offload=ml_config.get('LOW_VRAM_MODE', False)
             )
             print("✅ Pipeline initialized successfully.")

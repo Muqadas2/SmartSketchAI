@@ -11,6 +11,7 @@ from .validator import ForensicPromptValidator
 from .generator import FaceGenerator
 from .scorer import FaceScorer
 from .sketch_converter import MemoryEfficientSketchConverter
+from .inpainter import FaceInpainter
 
 
 class SmartSketchPipeline:
@@ -24,7 +25,8 @@ class SmartSketchPipeline:
         generator: FaceGenerator,
         scorer: FaceScorer,
         sketch_converter: Optional[MemoryEfficientSketchConverter] = None,
-        face_editor: Optional["FaceEditor"] = None  # NEW
+        face_editor: Optional["FaceEditor"] = None,
+        face_inpainter: Optional[FaceInpainter] = None
     ):
         """
         Initialize pipeline
@@ -40,7 +42,8 @@ class SmartSketchPipeline:
         self.generator = generator
         self.scorer = scorer
         self.sketch_converter = sketch_converter
-        self.face_editor = face_editor  # NEW
+        self.face_editor = face_editor
+        self.face_inpainter = face_inpainter
         
         print("=" * 60)
         print("🚀 SmartSketch Pipeline Initialized")
@@ -337,6 +340,43 @@ class SmartSketchPipeline:
         
         return result
     
+    def inpainting_edit(
+        self,
+        generation_id: str,
+        original_image: Image.Image,
+        edit_prompt: str,
+        target_region: Optional[str] = None,
+        strength: float = 0.75,
+        seed: Optional[int] = None
+    ) -> Dict:
+        """
+        High-precision edit using semantic inpainting
+        """
+        if self.face_inpainter is None:
+            return {'success': False, 'error': 'Inpainter not initialized'}
+            
+        # Step 1: Validate
+        is_valid, enhanced_edit, _ = self.validator.validate_and_enhance(edit_prompt)
+        if not is_valid:
+            return {'success': False, 'error': 'Invalid prompt'}
+            
+        # Step 2: Inpaint
+        result = self.face_inpainter.inpaint_edit(
+            image=original_image,
+            prompt=enhanced_edit,
+            target_region=target_region,
+            strength=strength,
+            seed=seed
+        )
+        
+        if result['success']:
+            # Step 3: Score
+            scores = self.scorer.score_generation(result['edited_image'], enhanced_edit)
+            result['scores'] = scores
+            result['generation_id'] = generation_id
+            
+        return result
+
     @classmethod
     def from_pretrained(
         cls,
@@ -346,7 +386,8 @@ class SmartSketchPipeline:
         lora_strength: float = 0.3,
         device: str = "cuda",
         enable_sketch: bool = True,
-        enable_editing: bool = True,  # NEW
+        enable_editing: bool = True,
+        enable_inpainting: bool = True,
         enable_offload: bool = False
     ):
         """
@@ -395,7 +436,19 @@ class SmartSketchPipeline:
                 print(f"⚠️  Could not load face editor: {e}")
                 print("   Editing will not be available")
         
-        return cls(validator, generator, scorer, sketch_converter, face_editor)
+        # Load face inpainter
+        face_inpainter = None
+        if enable_inpainting:
+            try:
+                face_inpainter = FaceInpainter(
+                    base_pipeline=generator.pipe,
+                    device=device,
+                    enable_offload=enable_offload
+                )
+            except Exception as e:
+                print(f"⚠️  Could not load face inpainter: {e}")
+        
+        return cls(validator, generator, scorer, sketch_converter, face_editor, face_inpainter)
 
 
 # Convenience function
