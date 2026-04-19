@@ -13,8 +13,8 @@ class ForensicSigner:
         self.encoder = WatermarkEncoder()
         self.encoder.set_watermark('bytes', watermark_text.encode('utf-8'))
         
-        # Use 'dwt' method - it's robust and does not require a GPU/Neural Net
-        self.method = 'dwt'
+        # Use 'dwtDct' method - it's robust and does not require a GPU/Neural Net
+        self.method = 'dwtDct'
 
     def sign_image(self, image: Image.Image) -> Image.Image:
         """
@@ -31,7 +31,7 @@ class ForensicSigner:
             # Convert back to PIL
             return Image.fromarray(signed_img_np.astype(np.uint8))
         except Exception as e:
-            print(f"⚠️  Watermarking failed: {e}. Returning original image.")
+            print(f"[!] Watermarking failed: {e}. Returning original image.")
             return image
 
     def calculate_hash(self, image: Image.Image) -> str:

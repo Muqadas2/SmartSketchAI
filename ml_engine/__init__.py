@@ -27,6 +27,22 @@
 
 
 
+import sys
+from unittest.mock import MagicMock
+
+# Shim for mediapipe.solutions (missing on some Python 3.14 wheels)
+try:
+    import mediapipe.solutions
+except (ImportError, AttributeError):
+    print("[Shim] Mocking missing mediapipe.solutions for compatibility...")
+    mock_mp = MagicMock()
+    if 'mediapipe' not in sys.modules:
+        sys.modules['mediapipe'] = mock_mp
+    sys.modules['mediapipe.solutions'] = MagicMock()
+    sys.modules['mediapipe.solutions.face_mesh'] = MagicMock()
+    sys.modules['mediapipe.solutions.drawing_utils'] = MagicMock()
+    sys.modules['mediapipe.solutions.drawing_styles'] = MagicMock()
+
 __version__ = "1.2.0"  # Updated for face editing
 __author__ = "Muqaddas Anees, Muqadas Zahra, Eman Chaudhary"
 __institution__ = "NUST SEECS"

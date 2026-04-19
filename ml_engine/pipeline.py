@@ -51,21 +51,21 @@ class SmartSketchPipeline:
         self.safety_checker = safety_checker
         
         print("=" * 60)
-        print("🚀 SmartSketch Pipeline Initialized")
+        print("READY SmartSketch Pipeline Initialized")
         print("=" * 60)
-        print("✅ LLM Validator: Ready")
-        print("✅ Image Generator: Ready")
-        print("✅ Scorer: Ready")
+        print("[OK] CLIP Scorer Ready")
+        print("[OK] Face Embedding Model Ready")
+        print("READY Scorer Initialized")
         
         if face_editor:
-            print("✅ Face Editor: Ready")
+            print("[OK] Face Editor: Ready")
         else:
-            print("⚠️  Face Editor: Not loaded")
+            print("[WARNING] Face Editor: Not loaded")
         
         if sketch_converter:
-            print("✅ Sketch Converter: Ready")
+            print("[OK] Sketch Converter: Ready")
         else:
-            print("⚠️  Sketch Converter: Not loaded (photos only)")
+            print("[WARNING] Sketch Converter: Not loaded (photos only)")
         
         print("=" * 60)
     
@@ -158,7 +158,7 @@ class SmartSketchPipeline:
                 }
             
             try:
-                print(f"\\n🎨 Converting to {sketch_style} sketch...")
+                print(f"\n[INFO] Converting to {sketch_style} sketch...")
                 
                 sketch_image = self.sketch_converter.convert(
                     image=photo_image,
@@ -174,7 +174,7 @@ class SmartSketchPipeline:
                     "converted_from_photo": True
                 }
                 
-                print("✅ Sketch conversion complete!")
+                print("[OK] Sketch conversion complete!")
                 
             except Exception as e:
                 return {
@@ -188,14 +188,14 @@ class SmartSketchPipeline:
         # ============================================
         # STEP 4: FORENSIC INTEGRITY (SIGN & HASH)
         # ============================================
-        print("\n🛡️ Applying forensic integrity...")
+        print("\n[SECURITY] Applying forensic integrity...")
         
         # Safety Check (Optional)
         has_nsfw = False
         if self.safety_checker:
             final_image, has_nsfw = self.safety_checker.check(final_image)
             if has_nsfw:
-                print("⚠️  NSFW content detected. Image censored.")
+                print("[WARNING] NSFW content detected. Image censored.")
 
         # Invisible Watermark
         final_image = self.signer.sign_image(final_image)
@@ -284,15 +284,15 @@ class SmartSketchPipeline:
                 'generation_id': generation_id
             }
         
-        print(f"\\n{'='*70}")
-        print(f"🎯 SMARTSKETCH EDIT PIPELINE")
+        print(f"\n{'='*70}")
+        print(f"[INFO] SMARTSKETCH EDIT PIPELINE")
         print(f"{'='*70}")
         print(f"📋 Original Generation ID: {generation_id}")
         print(f"📝 Edit Prompt: {edit_prompt}")
         print(f"{'='*70}")
         
         # Step 1: Validate edit prompt
-        print("\\nSTEP 1: VALIDATING EDIT PROMPT")
+        print("\nSTEP 1: VALIDATING EDIT PROMPT")
         print("-"*70)
         
         is_valid, enhanced_edit, validation_meta = self.validator.validate_and_enhance(
@@ -302,18 +302,18 @@ class SmartSketchPipeline:
         )
         
         if not is_valid:
-            print(f"❌ Validation failed: {validation_meta['reason']}")
+            print(f"[!] Validation failed: {validation_meta['reason']}")
             return {
                 'success': False,
                 'error': f"Invalid edit prompt: {validation_meta['reason']}",
                 'generation_id': generation_id
             }
         
-        print(f"✅ Edit prompt validated")
+        print(f"[OK] Edit prompt validated")
         print(f"✨ Enhanced: {enhanced_edit[:80]}...")
         
         # Step 2: Edit face
-        print("\\nSTEP 2: EDITING FACE")
+        print("\nSTEP 2: EDITING FACE")
         print("-"*70)
         
         result = self.face_editor.edit_face(
@@ -324,11 +324,11 @@ class SmartSketchPipeline:
         )
         
         if not result['success']:
-            print(f"❌ Edit failed: {result['error']}")
+            print(f"[!] Edit failed: {result['error']}")
             return result
         
         # Step 3: Score edited image
-        print("\\nSTEP 3: SCORING EDITED IMAGE")
+        print("\nSTEP 3: SCORING EDITED IMAGE")
         print("-"*70)
         
         try:
@@ -339,11 +339,11 @@ class SmartSketchPipeline:
             )
             
             result['scores'] = scores
-            print(f"📊 Quality Score: {scores['combined_score']:.1f}/100")
-            print(f"💬 {scores['interpretation']}")
+            print(f"[METRIC] Quality Score: {scores['combined_score']:.1f}/100")
+            print(f"[INFO] {scores['interpretation']}")
             
         except Exception as e:
-            print(f"⚠️  Scoring failed: {e}")
+            print(f"[WARNING] Scoring failed: {e}")
             result['scores'] = {
                 'clip_score': 0.0,
                 'combined_score': 0.0,
@@ -351,7 +351,7 @@ class SmartSketchPipeline:
             }
             
         # Step 4: Forensic Integrity
-        print("\n🛡️ Applying forensic integrity to edit...")
+        print("\n[SECURITY] Applying forensic integrity to edit...")
         result['edited_image'] = self.signer.sign_image(result['edited_image'])
         result['forensic_hash'] = self.signer.calculate_hash(result['edited_image'])
         result['is_watermarked'] = True
@@ -361,13 +361,13 @@ class SmartSketchPipeline:
         result['metadata']['original_generation_id'] = generation_id
         result['metadata']['validation'] = validation_meta
         
-        print("\\n" + "="*70)
-        print("✅ EDIT PIPELINE COMPLETED SUCCESSFULLY")
+        print("\n" + "="*70)
+        print("[OK] EDIT PIPELINE COMPLETED SUCCESSFULLY")
         print("="*70)
         print(f"🆔 Edit ID: {result['edit_id']}")
         print(f"👤 Identity Score: {result['identity_score']:.1%}")
         print(f"📊 Quality Score: {result['scores']['combined_score']:.1f}/100")
-        print(f"{'='*70}\\n")
+        print(f"{'='*70}\n")
         
         return result
     
@@ -407,7 +407,7 @@ class SmartSketchPipeline:
             result['generation_id'] = generation_id
             
             # Step 4: Forensic Integrity
-            print("\n🛡️ Applying forensic integrity to inpaint...")
+            print("\n[SECURITY] Applying forensic integrity to inpaint...")
             result['edited_image'] = self.signer.sign_image(result['edited_image'])
             result['forensic_hash'] = self.signer.calculate_hash(result['edited_image'])
             result['is_watermarked'] = True
@@ -457,8 +457,8 @@ class SmartSketchPipeline:
                     enable_offload=enable_offload
                 )
             except Exception as e:
-                print(f"⚠️  Could not load sketch converter: {e}")
-                print("   Pipeline will work for photos only")
+                print(f"[!] Could not load sketch converter: {e}")
+                print("   [INFO] Pipeline will work for photos only")
         
         # Load face editor
         face_editor = None
@@ -471,8 +471,8 @@ class SmartSketchPipeline:
                     enable_offload=enable_offload
                 )
             except Exception as e:
-                print(f"⚠️  Could not load face editor: {e}")
-                print("   Editing will not be available")
+                print(f"[!] Could not load face editor: {e}")
+                print("   [INFO] Editing will not be available")
         
         # Load face inpainter
         face_inpainter = None
@@ -484,7 +484,7 @@ class SmartSketchPipeline:
                     enable_offload=enable_offload
                 )
             except Exception as e:
-                print(f"⚠️  Could not load face inpainter: {e}")
+                print(f"[!] Could not load face inpainter: {e}")
         
         # Load safety checker
         safety_checker = None
@@ -492,7 +492,7 @@ class SmartSketchPipeline:
             try:
                 safety_checker = ForensicSafetyChecker(device=device)
             except Exception as e:
-                print(f"⚠️  Could not load safety checker: {e}")
+                print(f"[!] Could not load safety checker: {e}")
         
         signer = ForensicSigner()
         
