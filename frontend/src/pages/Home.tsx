@@ -12,18 +12,27 @@ function Home() {
   const [generateResult, setGenerateResult] = useState<GenerateResult | null>(null);
   const [editResult, setEditResult] = useState<EditResult | null>(null);
   const [currentPrompt, setCurrentPrompt] = useState('');
+  const [selectedImage, setSelectedImage] = useState<GenerateResult | null>(null);
 
   const handleGenerateResult = useCallback(
     (result: GenerateResult | null, prompt: string) => {
       setGenerateResult(result);
       setCurrentPrompt(prompt);
       setEditResult(null);
+      setSelectedImage(null); // Clear selected if new one is generated
     },
     []
   );
 
   const handleEditResult = useCallback((result: EditResult | null) => {
     setEditResult(result);
+  }, []);
+
+  const handleSelectHistory = useCallback((image: GenerateResult) => {
+    setSelectedImage(image);
+    setGenerateResult(image);
+    setCurrentPrompt(image.prompt);
+    setEditResult(null);
   }, []);
 
   if (!isAuthenticated) {
@@ -34,10 +43,11 @@ function Home() {
     <div className="h-screen flex flex-col bg-white dark:bg-gray-900">
       <TopBar />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        <Sidebar onSelectImage={handleSelectHistory} />
         <Workspace
           onGenerateResult={handleGenerateResult}
           onEditResult={handleEditResult}
+          selectedImage={selectedImage}
         />
         <RightPanel
           generateResult={generateResult}

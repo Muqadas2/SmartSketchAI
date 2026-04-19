@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { generateForensicSketch, editForensicSketch } from '../lib/api';
 import type { GenerateResult, EditResult } from '../types';
 
@@ -7,9 +7,10 @@ type Mode = 'generate' | 'edit';
 type WorkspaceProps = {
   onGenerateResult?: (result: GenerateResult | null, prompt: string) => void;
   onEditResult?: (result: EditResult | null) => void;
+  selectedImage?: GenerateResult | null;
 };
 
-function Workspace({ onGenerateResult, onEditResult }: WorkspaceProps) {
+function Workspace({ onGenerateResult, onEditResult, selectedImage }: WorkspaceProps) {
   const [mode, setMode] = useState<Mode>('generate');
   const [prompt, setPrompt] = useState('');
   const [editPrompt, setEditPrompt] = useState('');
@@ -20,6 +21,16 @@ function Workspace({ onGenerateResult, onEditResult }: WorkspaceProps) {
   const [lastGenerateResult, setLastGenerateResult] = useState<GenerateResult | null>(null);
   const [lastGeneratePrompt, setLastGeneratePrompt] = useState('');
   const [lastEditResult, setLastEditResult] = useState<EditResult | null>(null);
+
+  // Handle image selection from sidebar (History)
+  useEffect(() => {
+    if (selectedImage) {
+      setLastGenerateResult(selectedImage);
+      setLastGeneratePrompt(selectedImage.prompt);
+      setLastEditResult(null);
+      setMode('edit'); // Automatically switch to Edit mode
+    }
+  }, [selectedImage]);
 
   const handleGenerate = useCallback(
     async (e: React.FormEvent) => {

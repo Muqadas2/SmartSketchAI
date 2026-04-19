@@ -149,3 +149,34 @@ export async function registerUser(body: {
     skipAuth: true,
   });
 }
+
+/** POST /api/forensic/generate/ */
+export async function generateForensicSketch(body: {
+  prompt: string;
+  case_type?: string;
+  age?: number | null;
+}) {
+  return request<any>('forensic/generate/', {
+    method: 'POST',
+    body,
+  });
+}
+
+/** POST /api/forensic/edit/ */
+export async function editForensicSketch(body: {
+  original_image_id: number;
+  edit_prompt: string;
+  strength?: number;
+}) {
+  return request<any>('forensic/edit/', {
+    method: 'POST',
+    body,
+  });
+}
+
+/** GET /api/my-images/ */
+export async function fetchUserImages() {
+  return request<any[]>('my-images/', {
+    method: 'GET',
+  });
+}
