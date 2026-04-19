@@ -3,7 +3,8 @@
 # ============================================
 
 import torch
-from diffusers import StableDiffusionXLImg2ImgPipeline
+from diffusers import StableDiffusionXLControlNetImg2ImgPipeline, ControlNetModel
+from controlnet_aux import CannyDetector
 from PIL import Image
 from typing import Optional, Dict
 import random
@@ -42,22 +43,33 @@ class FaceEditor:
         
         self.device = device
         
+        # Load ControlNet for geometric locking (NEW)
+        print("  - Loading Canny ControlNet for geometric locking...")
+        self.controlnet = ControlNetModel.from_pretrained(
+            "diffusers/controlnet-canny-sdxl-1.0",
+            torch_dtype=torch.float16 if device == "cuda" else torch.float32
+        ).to(device)
+        
+        self.canny_detector = CannyDetector()
+
         # Reuse existing SDXL components (saves memory!)
         if base_pipeline:
             print("  - Reusing SDXL components from generator...")
-            self.pipe = StableDiffusionXLImg2ImgPipeline(
+            self.pipe = StableDiffusionXLControlNetImg2ImgPipeline(
                 vae=base_pipeline.vae,
                 text_encoder=base_pipeline.text_encoder,
                 text_encoder_2=base_pipeline.text_encoder_2,
                 tokenizer=base_pipeline.tokenizer,
                 tokenizer_2=base_pipeline.tokenizer_2,
                 unet=base_pipeline.unet,
-                scheduler=base_pipeline.scheduler
+                scheduler=base_pipeline.scheduler,
+                controlnet=self.controlnet
             )
         else:
-            print("  - Loading new SDXL img2img pipeline...")
-            self.pipe = StableDiffusionXLImg2ImgPipeline.from_pretrained(
+            print("  - Loading new SDXL ControlNet Img2Img pipeline...")
+            self.pipe = StableDiffusionXLControlNetImg2ImgPipeline.from_pretrained(
                 "stabilityai/stable-diffusion-xl-base-1.0",
+                controlnet=self.controlnet,
                 torch_dtype=torch.float16 if device == "cuda" else torch.float32
             )
         
@@ -243,17 +255,22 @@ class FaceEditor:
         else:
             generator = None
         
-        print(f"🎨 Applying edit...")
+        print(f"🎨 Applying precision edit with ControlNet lock...")
         
         try:
-            # Generate edited image
+            # 1. Generate Canny map for geometric locking
+            canny_image = self.canny_detector(original_image)
+            
+            # 2. Generate edited image
             edited_image = self.pipe(
                 prompt=full_prompt,
                 negative_prompt=negative_prompt,
                 image=original_image,
+                control_image=canny_image,
                 strength=strength,
                 num_inference_steps=num_inference_steps,
                 guidance_scale=guidance_scale,
+                controlnet_conditioning_scale=0.8, # Lock structure by 80%
                 generator=generator
             ).images[0]
             
