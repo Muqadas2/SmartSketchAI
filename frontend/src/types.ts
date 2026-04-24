@@ -4,6 +4,7 @@
 export interface GenerateResult {
   id: number;
   image_url: string;
+  prompt: string;
   scores: {
     clip_score?: number;
     identity_score?: number;
@@ -48,4 +49,13 @@ export interface EditRequest {
   original_image_id: number;
   edit_prompt: string;
   strength?: number;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  prompt: string;
+  generateResult: GenerateResult | null;
+  editResult: EditResult | null;
+  createdAt: number;
 }

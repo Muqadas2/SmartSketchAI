@@ -1,4 +1,4 @@
-import type { ChatSession, GenerateResult, EditResult } from '../types';
+import type { ChatSession } from '../types';
 
 const STORAGE_KEY = 'smartsketch_sessions';
 const CURRENT_SESSION_KEY = 'smartsketch_current_session';

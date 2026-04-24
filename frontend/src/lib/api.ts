@@ -6,8 +6,8 @@ import {
   clearTokens,
 } from './authStore';
 
-type RequestOptions = RequestInit & {
-  body?: Record<string, unknown> | string;
+type RequestOptions = Omit<RequestInit, 'body'> & {
+  body?: any;
   skipAuth?: boolean;
 };
 
